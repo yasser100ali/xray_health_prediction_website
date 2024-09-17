@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{% block title %}X-ray Predictor{% endblock %}</title>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <nav>
+        <div class="nav-left">
+            <a href="{{ url_for('index') }}">X-ray Predictor</a>
+        </div>
+        <div class="nav-right">
+            <a href="{{ url_for('index') }}" class="{% if request.path == '/' %}active{% endif %}">Home</a>
+            <a href="{{ url_for('converter') }}" class="{% if request.path == '/converter' %}active{% endif %}">DICOM to PNG Converter</a>
+            <a href="{{ url_for('about') }}" class="{% if request.path == '/about' %}active{% endif %}">About</a>
+        </div>
+    </nav>
+    <div class="container">
+        {% block content %}
+        {% endblock %}
+    </div>
+</body>
+</html>

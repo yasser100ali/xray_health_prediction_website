@@ -1,0 +1,126 @@
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    background-color: #f0f0f0;
+}
+
+nav {
+    background-color: #fff;
+    border-bottom: 1px solid #ccc;
+    padding: 10px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.nav-left a {
+    font-size: 24px;
+    text-decoration: none;
+    color: #333;
+}
+
+.nav-right a {
+    margin-left: 20px;
+    text-decoration: none;
+    color: #333;
+}
+
+.nav-right a.active {
+    font-weight: bold;
+    border-bottom: 2px solid #007BFF;
+}
+
+.container {
+    max-width: 800px;
+    margin: 40px auto;
+    padding: 20px;
+    background-color: #fff;
+}
+
+h1 {
+    color: #333;
+}
+
+p {
+    color: #666;
+}
+
+.upload-area {
+    margin-top: 20px;
+    text-align: center;
+}
+
+#drop-zone {
+    border: 2px dashed #ccc;
+    padding: 40px;
+    background-color: #fafafa;
+    cursor: pointer;
+    position: relative;
+    transition: background-color 0.3s, border-color 0.3s;
+}
+
+#drop-zone.dragover {
+    background-color: #e0e0e0;
+    border-color: #007BFF;
+}
+
+#drop-zone p {
+    color: #999;
+    margin: 0;
+    font-size: 18px;
+}
+
+input[type="file"] {
+    display: none;
+}
+
+.button {
+    padding: 10px 20px;
+    background-color: #007BFF;
+    border: none;
+    color: #fff;
+    cursor: pointer;
+    margin-top: 20px;
+    font-size: 16px;
+    border-radius: 4px;
+    transition: background-color 0.3s;
+    text-decoration: none;
+}
+
+.button:hover {
+    background-color: #0056b3;
+}
+
+#progress {
+    margin-top: 20px;
+    font-size: 18px;
+    color: #333;
+}
+
+#result p {
+    font-size: 20px;
+}
+
+#result p#conversion-message {
+    color: green;
+}
+
+#result p#error-message {
+    color: red;
+}
+
+#result a.button {
+    display: inline-block;
+    margin-top: 10px;
+    text-decoration: none;
+    background-color: #28a745;
+    padding: 10px 20px;
+    color: #fff;
+    border-radius: 4px;
+    transition: background-color 0.3s;
+}
+
+#result a.button:hover {
+    background-color: #218838;
+}
+
