@@ -12,7 +12,7 @@ import tempfile
 import concurrent.futures
 import shutil
 import uuid
-import s3
+import boto3
 
 app = Flask(__name__)
 
