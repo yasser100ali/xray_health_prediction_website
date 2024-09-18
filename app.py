@@ -40,8 +40,12 @@ os.makedirs(CONVERTED_ZIPS_FOLDER, exist_ok=True)
 if not os.path.exists('/mnt/models'):
     os.makedirs('/mnt/models')  # Ensures the directory exists before downloading the file
 
-# Initialize the S3 client
-s3 = boto3.client('s3')
+s3 = boto3.client(
+    's3',
+    aws_access_key_id=os.getenv('AWS_ACCESS_KEY_ID'),
+    aws_secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY'),
+    region_name=os.getenv('AWS_DEFAULT_REGION')
+)
 
 # Define the bucket and file details
 BUCKET_NAME = 'my-model-bucket-1234'
