@@ -37,7 +37,7 @@ os.makedirs(CONVERTED_FOLDER, exist_ok=True)
 os.makedirs(CONVERTED_ZIPS_FOLDER, exist_ok=True)
 
 # Load your pre-trained model
-MODEL_PATH = '/Users/yasserali/Documents/website_projects/xray_reader_and_converter/saved_model/best_model.h5'  # Adjust the path as needed
+MODEL_PATH = '/mnt/models/best_model.h5' 
 model = load_model(MODEL_PATH)
 
 def allowed_file(filename, allowed_set):
