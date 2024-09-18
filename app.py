@@ -37,8 +37,8 @@ os.makedirs(DICOM_UPLOAD_FOLDER, exist_ok=True)
 os.makedirs(CONVERTED_FOLDER, exist_ok=True)
 os.makedirs(CONVERTED_ZIPS_FOLDER, exist_ok=True)
 
-if not os.path.exists('/mnt/models'):
-    os.makedirs('/mnt/models')  # Ensures the directory exists before downloading the file
+#if not os.path.exists('/mnt/models'):
+#    os.makedirs('/mnt/models')  # Ensures the directory exists before downloading the file
 
 s3 = boto3.client(
     's3',
