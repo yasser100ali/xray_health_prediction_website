@@ -1,4 +1,4 @@
-from flask import Flask, request, render_template, jsonify, url_for, send_file
+'''from flask import Flask, request, render_template, jsonify, url_for, send_file
 import tensorflow as tf
 from tensorflow.keras.models import load_model
 from PIL import Image
@@ -60,7 +60,89 @@ except Exception as e:
 
 model_data.seek(0)
 # Load the model after downloading it
-model = load_model(model_data)  
+model = load_model(model_data)  '''
+
+from flask import Flask, request, render_template, jsonify, url_for, send_file
+import tensorflow as tf
+from tensorflow.keras.models import load_model
+from PIL import Image
+import numpy as np
+import os
+import pydicom
+from werkzeug.utils import secure_filename
+import zipfile
+import io
+import tempfile
+import concurrent.futures
+import shutil
+import uuid
+import boto3
+import logging
+
+# Initialize logging
+logging.basicConfig(level=logging.INFO)
+
+app = Flask(__name__)
+
+# Configuration
+UPLOAD_FOLDER = 'uploads'
+DICOM_UPLOAD_FOLDER = 'dicom_uploads'
+CONVERTED_FOLDER = 'static/dicom_images'
+CONVERTED_ZIPS_FOLDER = 'converted_zips'
+ALLOWED_EXTENSIONS_DICOM = {'dcm', 'dicom'}
+ALLOWED_EXTENSIONS_IMAGE = {'png', 'jpeg', 'jpg'}
+ALLOWED_EXTENSIONS_ZIP = {'zip'}
+
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+app.config['DICOM_UPLOAD_FOLDER'] = DICOM_UPLOAD_FOLDER
+app.config['CONVERTED_FOLDER'] = CONVERTED_FOLDER
+app.config['CONVERTED_ZIPS_FOLDER'] = CONVERTED_ZIPS_FOLDER
+app.config['MAX_CONTENT_LENGTH'] = 200 * 1024 * 1024  # 200 MB limit
+
+# Ensure upload and converted directories exist
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+os.makedirs(DICOM_UPLOAD_FOLDER, exist_ok=True)
+os.makedirs(CONVERTED_FOLDER, exist_ok=True)
+os.makedirs(CONVERTED_ZIPS_FOLDER, exist_ok=True)
+
+# Define the path where the model will be saved
+MODEL_DIR = 'saved_model'
+MODEL_PATH = os.path.join(MODEL_DIR, 'best_model.h5')
+
+# Ensure the model directory exists
+os.makedirs(MODEL_DIR, exist_ok=True)
+
+# Initialize the S3 client with environment variables
+s3 = boto3.client(
+    's3',
+    aws_access_key_id=os.getenv('AWS_ACCESS_KEY_ID'),
+    aws_secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY'),
+    region_name=os.getenv('AWS_DEFAULT_REGION')
+)
+
+# Define the bucket and file details
+BUCKET_NAME = 'my-model-bucket-1234'
+MODEL_FILE_NAME = 'best_model.h5'
+
+try:
+    logging.info("Starting model download from S3.")
+    # Download the model file from S3 and save it to MODEL_PATH
+    s3.download_file(BUCKET_NAME, MODEL_FILE_NAME, MODEL_PATH)
+    logging.info(f"Model downloaded successfully to {MODEL_PATH}")
+except Exception as e:
+    logging.error(f"Error downloading the model: {e}")
+    raise  # Re-raise the exception to prevent proceeding without the model
+
+# Load the model from the saved file
+try:
+    model = load_model(MODEL_PATH)
+    logging.info("Model loaded successfully.")
+except Exception as e:
+    logging.error(f"Error loading the model: {e}")
+    raise
+
+# Rest of your Flask app code goes here
+
 
 def allowed_file(filename, allowed_set):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in allowed_set
