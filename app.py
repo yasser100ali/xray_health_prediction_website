@@ -50,16 +50,17 @@ s3 = boto3.client(
 # Define the bucket and file details
 BUCKET_NAME = 'my-model-bucket-1234'
 MODEL_FILE_NAME = 'best_model.h5'
-LOCAL_FILE_PATH = '/mnt/models/best_model.h5'  # Where you'll store the file locally
+model_data = io.BytesIO()
 
 try:
     # Download the model file from S3 to the specified path
-    s3.download_file(BUCKET_NAME, MODEL_FILE_NAME, LOCAL_FILE_PATH)
+    s3.download_fileobj(BUCKET_NAME, MODEL_FILE_NAME, model_data)
 except Exception as e:
     print(f"Error downloading the model: {e}")  # Error handling for download issues
 
+model_data.seek(0)
 # Load the model after downloading it
-model = load_model(LOCAL_FILE_PATH)  # Load the Keras model for further use
+model = load_model(model_data)  
 
 def allowed_file(filename, allowed_set):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in allowed_set
