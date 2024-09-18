@@ -5,3 +5,4 @@ numpy==1.24.2
 pydicom==2.3.0
 Werkzeug==2.3.4
 gunicorn==21.2.0
+boto3
