@@ -1,70 +1,5 @@
-'''from flask import Flask, request, render_template, jsonify, url_for, send_file
-import tensorflow as tf
-from tensorflow.keras.models import load_model
-from PIL import Image
-import numpy as np
-import os
-import pydicom
-from werkzeug.utils import secure_filename
-import zipfile
-import io
-import tempfile
-import concurrent.futures
-import shutil
-import uuid
-import boto3
-
-app = Flask(__name__)
-
-# Configuration
-UPLOAD_FOLDER = 'uploads'
-DICOM_UPLOAD_FOLDER = 'dicom_uploads'
-CONVERTED_FOLDER = 'static/dicom_images'
-CONVERTED_ZIPS_FOLDER = 'converted_zips'
-ALLOWED_EXTENSIONS_DICOM = {'dcm', 'dicom'}
-ALLOWED_EXTENSIONS_IMAGE = {'png', 'jpeg', 'jpg'}
-ALLOWED_EXTENSIONS_ZIP = {'zip'}
-
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-app.config['DICOM_UPLOAD_FOLDER'] = DICOM_UPLOAD_FOLDER
-app.config['CONVERTED_FOLDER'] = CONVERTED_FOLDER
-app.config['CONVERTED_ZIPS_FOLDER'] = CONVERTED_ZIPS_FOLDER
-app.config['MAX_CONTENT_LENGTH'] = 200 * 1024 * 1024  # 200 MB limit
-
-# Ensure upload and converted directories exist
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-os.makedirs(DICOM_UPLOAD_FOLDER, exist_ok=True)
-os.makedirs(CONVERTED_FOLDER, exist_ok=True)
-os.makedirs(CONVERTED_ZIPS_FOLDER, exist_ok=True)
-
-#if not os.path.exists('/mnt/models'):
-#    os.makedirs('/mnt/models')  # Ensures the directory exists before downloading the file
-
-s3 = boto3.client(
-    's3',
-    aws_access_key_id=os.getenv('AWS_ACCESS_KEY_ID'),
-    aws_secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY'),
-    region_name=os.getenv('AWS_DEFAULT_REGION')
-)
-
-# Define the bucket and file details
-BUCKET_NAME = 'my-model-bucket-1234'
-MODEL_FILE_NAME = 'best_model.h5'
-model_data = io.BytesIO()
-
-try:
-    # Download the model file from S3 to the specified path
-    s3.download_fileobj(BUCKET_NAME, MODEL_FILE_NAME, model_data)
-except Exception as e:
-    print(f"Error downloading the model: {e}")  # Error handling for download issues
-
-model_data.seek(0)
-# Load the model after downloading it
-model = load_model(model_data)  '''
-
 from flask import Flask, request, render_template, jsonify, url_for, send_file
-import tensorflow as tf
-from tensorflow.keras.models import load_model
+import onnxruntime as ort 
 from PIL import Image
 import numpy as np
 import os
@@ -76,11 +11,6 @@ import tempfile
 import concurrent.futures
 import shutil
 import uuid
-import boto3
-import logging
-
-# Initialize logging
-logging.basicConfig(level=logging.INFO)
 
 app = Flask(__name__)
 
@@ -105,59 +35,47 @@ os.makedirs(DICOM_UPLOAD_FOLDER, exist_ok=True)
 os.makedirs(CONVERTED_FOLDER, exist_ok=True)
 os.makedirs(CONVERTED_ZIPS_FOLDER, exist_ok=True)
 
-# Define the path where the model will be saved
-MODEL_DIR = 'saved_model'
-MODEL_PATH = os.path.join(MODEL_DIR, 'best_model.h5')
+MODEL_PATH = 'models/best_model.onnx'
 
-# Ensure the model directory exists
-os.makedirs(MODEL_DIR, exist_ok=True)
+# Initialize the ONNX runtime session
+ort_session = ort.InferenceSession(MODEL_PATH)
 
-# Initialize the S3 client with environment variables
-s3 = boto3.client(
-    's3',
-    aws_access_key_id=os.getenv('AWS_ACCESS_KEY_ID'),
-    aws_secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY'),
-    region_name=os.getenv('AWS_DEFAULT_REGION')
-)
-
-# Define the bucket and file details
-BUCKET_NAME = 'my-model-bucket-1234'
-MODEL_FILE_NAME = 'best_model.h5'
-
-try:
-    logging.info("Starting model download from S3.")
-    # Download the model file from S3 and save it to MODEL_PATH
-    s3.download_file(BUCKET_NAME, MODEL_FILE_NAME, MODEL_PATH)
-    logging.info(f"Model downloaded successfully to {MODEL_PATH}")
-except Exception as e:
-    logging.error(f"Error downloading the model: {e}")
-    raise  # Re-raise the exception to prevent proceeding without the model
-
-# Load the model from the saved file
-try:
-    model = load_model(MODEL_PATH)
-    logging.info("Model loaded successfully.")
-except Exception as e:
-    logging.error(f"Error loading the model: {e}")
-    raise
-
-# Rest of your Flask app code goes here
-
+# Define input and output names
+input_name = ort_session.get_inputs()[0].name
+output_name = ort_session.get_outputs()[0].name
 
 def allowed_file(filename, allowed_set):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in allowed_set
 
-def model_predict(img_path, model):
+def model_predict(img_path, ort_session):
+    """
+    Predict the class of an image using an ONNX model.
+
+    Parameters:
+    - img_path (str): Path to the input image.
+    - ort_session (onnxruntime.InferenceSession): The loaded ONNX Runtime session.
+
+    Returns:
+    - result (str): Predicted class label ('Healthy' or 'Potentially unhealthy').
+    - confidence (float): Confidence score of the prediction.
+    """
     # Load and preprocess the image
     img = Image.open(img_path).convert('RGB')
     img = img.resize((512, 512))  # Adjust to your model's input size
-    x = np.array(img)
+    x = np.array(img).astype(np.float32)  # Ensure the data type is float32
     x = x / 255.0  # Normalize
-    x = np.expand_dims(x, axis=0)  # Batch dimension
+    x = np.expand_dims(x, axis=0)  # Add batch dimension
 
-    # Make prediction
-    preds = model.predict(x)
-    confidence = float(preds[0][0])  # Assuming the model outputs a probability between 0 and 1
+    # Prepare input dictionary
+    input_name = ort_session.get_inputs()[0].name  # Get the name of the first input
+    ort_inputs = {input_name: x}
+
+    # Run inference
+    ort_outs = ort_session.run(None, ort_inputs)
+    preds = ort_outs[0]  # Assuming the model has a single output
+
+    # Extract confidence score
+    confidence = float(preds[0][0])  # Adjust indexing based on your model's output
 
     # Interpret prediction
     if confidence <= 0.4:
@@ -165,7 +83,7 @@ def model_predict(img_path, model):
         confidence = 1 - confidence  # Confidence for 'Healthy'
     else:
         result = 'Potentially unhealthy'
-        confidence = confidence  # Confidence for 'Unhealthy'
+        # confidence remains as is for 'Unhealthy'
 
     return result, confidence
 
@@ -222,26 +140,32 @@ def about():
 def predict():
     # Handle the image upload and prediction
     if 'file' not in request.files:
-        return jsonify({'error': 'No file uploaded'})
+        return jsonify({'error': 'No file uploaded'}), 400
     file = request.files['file']
     if file.filename == '':
-        return jsonify({'error': 'No file selected'})
+        return jsonify({'error': 'No file selected'}), 400
     if file and allowed_file(file.filename, ALLOWED_EXTENSIONS_IMAGE):
         # Save the uploaded image
         filename = secure_filename(file.filename)
         upload_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
         file.save(upload_path)
 
-        # Make prediction
-        result, confidence = model_predict(upload_path, model)
+        # Make prediction using the ONNX Runtime session
+        if ort_session is None:
+            return jsonify({'error': 'Model is not loaded properly.'}), 500
+
+        try:
+            result, confidence = model_predict(upload_path, ort_session)
+        except Exception as e:
+            return jsonify({'error': f'Prediction failed: {str(e)}'}), 500
 
         # Remove the uploaded file after prediction
         os.remove(upload_path)
 
         # Return the result as JSON
-        return jsonify({'prediction': result, 'confidence': float(confidence)})
+        return jsonify({'prediction': result, 'confidence': float(confidence)}), 200
     else:
-        return jsonify({'error': 'Invalid file format. Please upload a PNG or JPEG image.'})
+        return jsonify({'error': 'Invalid file format. Please upload a PNG or JPEG image.'}), 400
 
 @app.route('/convert_dicom', methods=['POST'])
 def convert_dicom():
