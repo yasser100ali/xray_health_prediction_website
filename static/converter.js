@@ -83,10 +83,10 @@ document.getElementById('upload-form').addEventListener('submit', function(e) {
         body: formData
     }).then(response => response.json())
       .then(data => {
-          if(data.error) {
-              resultDiv.innerHTML = '<p id="error-message">' + data.error + '</p>';
+          if (data.error) {
+              resultDiv.innerHTML = `<p id="error-message">${data.error}</p>`;
               progressDiv.textContent = '';
-          } else if(data.success && data.download_url) {
+          } else if (data.success && data.download_url) {
               // Display 'Conversion completed' message and download button
               resultDiv.innerHTML = `
                   <p id="conversion-message">Conversion completed.</p>
@@ -100,7 +100,7 @@ document.getElementById('upload-form').addEventListener('submit', function(e) {
           }
       })
       .catch(error => {
-          resultDiv.innerHTML = '<p id="error-message">An error occurred: ' + error.message + '</p>';
+          resultDiv.innerHTML = `<p id="error-message">An error occurred: ${error.message}</p>`;
           progressDiv.textContent = '';
       });
 
