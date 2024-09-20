@@ -1,5 +1,7 @@
 X-ray Predictor and DICOM Converter
 
+Currently live on https://xray-predictor-d32405aa1b63.herokuapp.com
+
 Project Overview
 
 This Flask application serves as a dual-purpose tool for both predicting health statuses from X-ray images and converting DICOM files to PNG format. It allows users to upload X-ray images to assess their health status and to convert DICOM files into a more universally usable format (PNG). The project is designed to provide medical professionals and radiologists with a quick, reliable tool to assist in diagnostics and file management.
@@ -14,3 +16,5 @@ Technical Stack
  - Machine Learning Model: TensorFlow/Keras
  - Frontend: HTML, CSS, JavaScript
  - Data Handling: Pydicom for DICOM file manipulation
+
+After building the site, it was uploaded through the platform Heroku. 
